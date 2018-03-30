@@ -1,7 +1,7 @@
 import re
 
 
-class PasswordListProhibitions(Exception):
+class print_my_error(Exception):
     def __init__(self, error):
         self.error = error
 
@@ -48,35 +48,35 @@ def check_length_password(password, min_length=7):
     error_check = 'Пароль должен быть не менее 8 символов'
     result_check = not bool(len(password) > min_length)
     if result_check:
-        raise PasswordListProhibitions(error=error_check)
+        raise print_my_error(error=error_check)
 
 
 def check_number_phone(password):
     error_check = 'В качестве пароля запрещено использовать номер телефона'
     result_check = bool(re.search(r'[+7|7-8]\d{11}', password))
     if result_check:
-        raise PasswordListProhibitions(error=error_check)
+        raise print_my_error(error=error_check)
 
 
 def check_date(password):
     error_check = 'В качестве пароля запрещено использовать календарные даты'
     result_check = bool(re.search(r'\d{1,2}[.]\d{1,2}[.]\d{2,4}', password))
     if result_check:
-        raise PasswordListProhibitions(error=error_check)
+        raise print_my_error(error=error_check)
 
 
 def check_email(password):
     error_check = 'В качестве пароля запрещено использовать емаил'
     result_check = bool(re.search(r'\w{1,30}[@]\w{1,8}[.][ru|com]+', password))
     if result_check:
-        raise PasswordListProhibitions(error=error_check)
+        raise print_my_error(error=error_check)
 
 
 def check_in_blacklist(password, blacklist):
     error_check = 'Пароль находится в запрещеном листе!'
     result_check = password in blacklist
     if result_check:
-        raise PasswordListProhibitions(error=error_check)
+        raise print_my_error(error=error_check)
 
 
 def check_password_strength(password, blacklist):
@@ -87,9 +87,9 @@ def check_password_strength(password, blacklist):
         if blacklist:
             check_in_blacklist(password, blacklist)
         for check_password in list_prohibition:
-                check_password(password)
-    except PasswordListProhibitions as Prohibit:
-                return Prohibit.error
+            check_password(password)
+    except print_my_error as prohibit:
+                return prohibit.error
     else:
         point_strength += 3
         for check_password in list_inclusion:
