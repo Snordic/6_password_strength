@@ -1,14 +1,6 @@
 import re
-
-
-class print_my_error(Exception):
-    def __init__(self, error):
-        self.error = error
-
-
-def get_user_password():
-    print('Введите ваш пароль: ')
-    return input()
+import getpass
+import sys
 
 
 def load_blacklist(filepath):
@@ -16,96 +8,80 @@ def load_blacklist(filepath):
         return file_blacklist.read().splitlines()
 
 
-def find_lower_case(password):
-    if bool(re.search(r'[a-z]', password)):
-        return 2
-    else:
-        return 0
+def has_lower_case(password):
+    return bool(re.search(r'[a-z]', password)) * 2
 
 
-def find_upper_case(password):
-    if bool(re.search(r'[A-Z]', password)):
-        return 2
-    else:
-        return 0
+def has_upper_case(password):
+    return bool(re.search(r'[A-Z]', password)) * 2
 
 
-def find_digital(password):
-    if bool(re.search(r'\d', password)):
-        return 1
-    else:
-        return 0
+def has_digital(password):
+    return bool(re.search(r'\d', password))
 
 
-def find_symbols(password):
-    if bool(re.search(r'\W', password)):
-        return 2
-    else:
-        return 0
+def has_symbols(password):
+    return bool(re.search(r'\W', password)) * 2
 
 
 def check_length_password(password, min_length=7):
-    error_check = 'Пароль должен быть не менее 8 символов'
-    result_check = not bool(len(password) > min_length)
-    if result_check:
-        raise print_my_error(error=error_check)
+    return not bool(len(password) > min_length)
 
 
 def check_number_phone(password):
-    error_check = 'В качестве пароля запрещено использовать номер телефона'
-    result_check = bool(re.search(r'[+7|7-8]\d{11}', password))
-    if result_check:
-        raise print_my_error(error=error_check)
+    return bool(re.search(r'[+7|7-8]\d{11}', password))
 
 
 def check_date(password):
-    error_check = 'В качестве пароля запрещено использовать календарные даты'
-    result_check = bool(re.search(r'\d{1,2}[.]\d{1,2}[.]\d{2,4}', password))
-    if result_check:
-        raise print_my_error(error=error_check)
+    return bool(re.search(r'\d{1,2}[.]\d{1,2}[.]\d{2,4}', password))
 
 
 def check_email(password):
-    error_check = 'В качестве пароля запрещено использовать емаил'
-    result_check = bool(re.search(r'\w{1,30}[@]\w{1,8}[.][ru|com]+', password))
-    if result_check:
-        raise print_my_error(error=error_check)
+    return bool(re.search(r'\w{1,30}[@]\w{1,8}[.][ru|com]+', password))
 
 
 def check_in_blacklist(password, blacklist):
-    error_check = 'Пароль находится в запрещеном листе!'
-    result_check = password in blacklist
-    if result_check:
-        raise print_my_error(error=error_check)
+    return password in blacklist
 
 
 def check_password_strength(password, blacklist):
     point_strength = 0
-    list_prohibition = [check_date, check_email, check_number_phone, check_length_password]
-    list_inclusion = [find_digital, find_lower_case, find_symbols, find_upper_case]
-    try:
-        if blacklist:
-            check_in_blacklist(password, blacklist)
-        for check_password in list_prohibition:
-            check_password(password)
-    except print_my_error as prohibit:
-                return prohibit.error
-    else:
-        point_strength += 3
-        for check_password in list_inclusion:
-            point_strength += check_password(password)
-        return '{} {}/{}'.format('Оценка вашего пароля: ', point_strength, '10')
+    checklist = [
+        has_digital,
+        has_lower_case,
+        has_symbols,
+        has_upper_case,
+    ]
+    list_prohibitions = [
+        check_length_password,
+        check_number_phone,
+        check_date,
+        check_email,
+    ]
+    if check_in_blacklist(password, blacklist):
+        print('Ваш пароль находится в черном списке паролей!')
+        return point_strength
+    for check in list_prohibitions:
+        if check(password):
+            print('Ваш пароль содержит личную информацию, '
+                  'либо его длина меньше 8 символов.')
+            return point_strength
+    point_strength = 3
+    for check in checklist:
+        point_strength += check(password)
+    return point_strength
 
 
 if __name__ == '__main__':
     try:
-        black_list = load_blacklist('blacklist.txt')
-    except FileNotFoundError:
-        print('Warning: Файл blacklist.txt не найден, качество проверки может ухудшится!')
-        black_list = None
-    finally:
-        user_password = get_user_password()
-        print(check_password_strength(user_password, black_list))
+        black_list = load_blacklist(sys.argv[1])
+    except (FileNotFoundError, IndexError):
+        print('Warning: Файл содеражищий запрещенные пароли не добавлен,'
+              ' качество проверки может ухудшится!')
+        black_list = []
+    user_password = getpass.getpass()
+    result_point = check_password_strength(user_password, black_list)
+    print('{} {}/{}'.format('Результат проверки:', result_point, '10'))
 
 
 
