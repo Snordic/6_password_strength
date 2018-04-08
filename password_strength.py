@@ -16,7 +16,7 @@ def has_upper_case(password):
     return bool(re.search(r'[A-Z]', password)) * 2
 
 
-def has_digital(password):
+def has_digits(password):
     return bool(re.search(r'\d', password))
 
 
@@ -40,36 +40,47 @@ def check_email(password):
     return bool(re.search(r'\w{1,30}[@]\w{1,8}[.][ru|com]+', password))
 
 
-def check_in_blacklist(password, blacklist):
+def is_in_blacklist(password, blacklist):
     return password in blacklist
 
 
-def check_password_strength(password, blacklist):
-    point_strength = 0
-    checklist = [
-        has_digital,
-        has_lower_case,
-        has_symbols,
-        has_upper_case,
-    ]
+def check_ban_password(password, blacklist):
     list_prohibitions = [
         check_length_password,
         check_number_phone,
         check_date,
         check_email,
     ]
-    if check_in_blacklist(password, blacklist):
+    if is_in_blacklist(password, blacklist):
         print('Ваш пароль находится в черном списке паролей!')
-        return point_strength
+        return False
     for check in list_prohibitions:
         if check(password):
             print('Ваш пароль содержит личную информацию, '
                   'либо его длина меньше 8 символов.')
-            return point_strength
+            return False
+    return True
+
+
+def calculating_complexity_password(password):
+    point_strength = 0
+    checklist = [
+        has_digits,
+        has_lower_case,
+        has_symbols,
+        has_upper_case,
+    ]
     point_strength = 3
     for check in checklist:
         point_strength += check(password)
     return point_strength
+
+
+def password_verification(password, blacklist):
+    result_check = 0
+    if check_ban_password(password, blacklist):
+        return calculating_complexity_password(password)
+    return result_check
 
 
 if __name__ == '__main__':
@@ -80,7 +91,7 @@ if __name__ == '__main__':
               ' качество проверки может ухудшится!')
         black_list = []
     user_password = getpass.getpass()
-    result_point = check_password_strength(user_password, black_list)
+    result_point = password_verification(user_password, black_list)
     print('{} {}/{}'.format('Результат проверки:', result_point, '10'))
 
 
