@@ -44,56 +44,45 @@ def is_in_blacklist(password, blacklist):
     return password in blacklist
 
 
-def check_ban_password(password, blacklist):
+def check_ban_password(password):
     list_prohibitions = [
         check_length_password,
         check_number_phone,
         check_date,
         check_email,
     ]
-    if is_in_blacklist(password, blacklist):
-        print('Ваш пароль находится в черном списке паролей!')
-        return False
     for check in list_prohibitions:
         if check(password):
-            print('Ваш пароль содержит личную информацию, '
-                  'либо его длина меньше 8 символов.')
-            return False
-    return True
+            return True
+    return False
 
 
 def calculating_complexity_password(password):
-    point_strength = 0
+    point_strength = 3
     checklist = [
         has_digits,
         has_lower_case,
         has_symbols,
         has_upper_case,
     ]
-    point_strength = 3
     for check in checklist:
         point_strength += check(password)
     return point_strength
 
 
-def password_verification(password, blacklist):
-    result_check = 0
-    if check_ban_password(password, blacklist):
-        return calculating_complexity_password(password)
-    return result_check
-
-
 if __name__ == '__main__':
     try:
+        user_password = getpass.getpass()
         black_list = load_blacklist(sys.argv[1])
     except (FileNotFoundError, IndexError):
         print('Warning: Файл содеражищий запрещенные пароли не добавлен,'
               ' качество проверки может ухудшится!')
         black_list = []
-    user_password = getpass.getpass()
-    result_point = password_verification(user_password, black_list)
-    print('{} {}/{}'.format('Результат проверки:', result_point, '10'))
-
-
-
-
+    if is_in_blacklist(user_password, black_list):
+        print('Ваш пароль находится в черном списке паролей!')
+    elif check_ban_password(user_password):
+        print('Ваш пароль содержит личную информацию, '
+              'либо его длина меньше 8 символов.')
+    else:
+        result_point = calculating_complexity_password(user_password)
+        print('{} {}/{}'.format('Результат проверки:', result_point, '10'))
